@@ -1,4 +1,4 @@
-import Therapist from "../models/therapistUser.models.js";
+import Therapist from "../../models/therapistUser.models.js";
 import bcrypt from "bcryptjs";
 
 const SignUpTherapist = async (req, res) => {

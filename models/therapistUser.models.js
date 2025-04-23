@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose =  require ('mongoose');
 
 const therapistUserSchema = new mongoose.Schema({
     profilePhoto: {
@@ -99,4 +99,5 @@ const therapistUserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Therapist = mongoose.model('Therapist', therapistUserSchema);
-export default Therapist;
+module.exports = Therapist;
+
