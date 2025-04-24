@@ -1,12 +1,11 @@
-const Therapist = require("../../models/therapistUser.models.js") ;
+const Therapist = require("../../models/therapistUser.models.js");
 const bcrypt = require('bcrypt');
-const therapistUser = require('../../models/therapistUser.models.js');
+const jwt = require('jsonwebtoken');
 
 //SignUpTherapist===============================
- exports.SignUpTherapist = async (req, res) => {
+exports.SignUpTherapist = async (req, res) => {
     try {
         const {
-            profilePhoto,
             fullName,
             email,
             phone,
@@ -38,19 +37,29 @@ const therapistUser = require('../../models/therapistUser.models.js');
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 12);
 
+        const addressArray = address ? address.split(',') : [];
+
+        const prefferedClientAgegroupArray = req.body.prefferedClientAgegroup
+            ? req.body.prefferedClientAgegroup.split(',')
+            : [];
+
+        const diagnosisOptionsArray = req.body.diagnosisOptions
+            ? req.body.diagnosisOptions.split(',')
+            : [];
+
         // Create a new user
         const newUser = new Therapist({
-            profilePhoto: profilePhoto || "",
+            profilePhoto: req.file ? req.file.path : "", // Use the uploaded file path
             fullName,
             email,
             phone,
             password: hashedPassword,
             DateOfBirth,
             gender,
-            address,
+            address : addressArray,
             city,
-            prefferedClientAgegroup,
-            diagnosisOptions,
+            prefferedClientAgegroup : prefferedClientAgegroupArray,
+            diagnosisOptions: diagnosisOptionsArray,
             travelTime,
             therapyType,
             bankingDetails,
@@ -65,10 +74,26 @@ const therapistUser = require('../../models/therapistUser.models.js');
 
         await newUser.save();
 
-        res.status(201).json({ message: "Therapist account created successfully" }, { newUser: newUser.toObject });
+        const token = jwt.sign(
+            { userId: newUser._id, email: newUser.email },
+            process.env.SECRET_KEY,
+            { expiresIn: '1h' }
+        );
+
+        // Remove password from response
+        const { password: _, ...userData } = newUser.toObject();
+
+        res.status(201).json({
+            message: "Therapist account created successfully",
+            user: userData,
+            token // Send the token to client
+        });
     } catch (error) {
         console.error("SignUpTherapist Error:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        });
     }
 };
 
@@ -77,26 +102,32 @@ exports.SignInTherapist = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Check if the user exists
         const user = await Therapist.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: "User with email doesn't exist! " });
+            return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // Check if the password is correct
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // Return user data without password
+        // Create JWT token
+        const token = jwt.sign(
+            { userId: user._id, email: user.email },
+            process.env.SECRET_KEY,
+            { expiresIn: '1h' }
+        );
+
         const { password: _, ...userData } = user.toObject();
-        res.status(200).json({ message: "Login successful", user: userData });
+        res.status(200).json({
+            message: "Login successful",
+            user: userData,
+            token // Send the token to the client
+        });
     } catch (error) {
         console.error("LoginTherapist Error:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
-
 }
-
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const appController = require('../../controllers/v1/appController');
-const upload = require("../../middlewares/upload"); 
 const jwtMiddleware = require('../../middlewares/authMiddleware');
 
 

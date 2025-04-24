@@ -1,7 +1,4 @@
 const Therapist = require("../../models/therapistUser.models.js") ;
-const bcrypt = require('bcrypt');
-const therapistUser = require('../../models/therapistUser.models.js');
-
 
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {

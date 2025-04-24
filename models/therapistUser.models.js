@@ -44,11 +44,9 @@ const therapistUserSchema = new mongoose.Schema({
     },
     prefferedClientAgegroup: {
         type: [String],
-        enum: ["5-12", "12-15", "16-20", "20+"],
     },
     diagnosisOptions: {
         type: [String],
-        enum: ["ADHD", "Anxiety", "Depression", "OCD", "PTSD", "Bipolar Disorder"],
     },
     travelTime: {
         type: Number,
