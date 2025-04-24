@@ -39,11 +39,11 @@ exports.SignUpTherapist = async (req, res) => {
 
         const addressArray = address ? address.split(',') : [];
 
-        const prefferedClientAgegroupArray = req.body.prefferedClientAgegroup
+        const prefferedClientAgegroupArray = prefferedClientAgegroup
             ? req.body.prefferedClientAgegroup.split(',')
             : [];
 
-        const diagnosisOptionsArray = req.body.diagnosisOptions
+        const diagnosisOptionsArray = diagnosisOptions
             ? req.body.diagnosisOptions.split(',')
             : [];
 
@@ -56,9 +56,9 @@ exports.SignUpTherapist = async (req, res) => {
             password: hashedPassword,
             DateOfBirth,
             gender,
-            address : addressArray,
+            address: addressArray,
             city,
-            prefferedClientAgegroup : prefferedClientAgegroupArray,
+            prefferedClientAgegroup: prefferedClientAgegroupArray,
             diagnosisOptions: diagnosisOptionsArray,
             travelTime,
             therapyType,
