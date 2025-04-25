@@ -1,7 +1,7 @@
 const Therapist = require("../../models/therapistUser.models.js");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sendEmailVerification, generateVerificationCode } = require("../../services/verificationService.js");
+// const { sendEmailVerification, generateVerificationCode } = require("../../services/verificationService.js");
 const { generateOTP, sendOTP } = require('../../services/otpService.js');
 
 //SignUpTherapist===============================
@@ -210,6 +210,7 @@ exports.SignInTherapist = async (req, res) => {
 //         res.status(500).json({ message: "Internal Server Error" });
 //     }
 // };
+
 
 //Verify OTP===============================
 exports.verifyOTP = async (req, res) => {
