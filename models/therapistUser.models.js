@@ -1,4 +1,4 @@
-const mongoose =  require ('mongoose');
+const mongoose = require('mongoose');
 
 const therapistUserSchema = new mongoose.Schema({
     profilePhoto: {
@@ -93,6 +93,32 @@ const therapistUserSchema = new mongoose.Schema({
         type: Number,
         min: 0,
         max: 1000
+    },
+    // isVerified: {
+    //     type: Boolean,
+    //     default: false
+    // },
+    // verificationCode: {
+    //     type: String,
+    //     trim: true,
+    // },
+    // verificationCodeExpires: {
+    //     type: Date,
+    //     default: Date.now,
+    //     expires: '5m' // Code expires after 5 minutes
+    // },
+    otp: {
+        type: String,
+        trim: true,
+    },
+    otpExpires: {
+        type: Date,
+        default: Date.now,
+        expires: '5m'
+    },
+    isOtpVerified: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

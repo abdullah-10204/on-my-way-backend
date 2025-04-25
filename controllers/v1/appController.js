@@ -27,7 +27,6 @@ exports.GetTherapistProfileData = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 }
-
 //Edit Therapist Profile data============================
 exports.EditTherapistProfileData = async (req, res) => {
     try {
