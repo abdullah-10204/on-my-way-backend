@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const { generateOTP, sendOTP } = require('../../services/otpService.js');
+const DummyUser = require("../../models/dummyUser.models.js");
 
 //SignUpTherapist===============================
 exports.SignUpTherapist = async (req, res) => {
@@ -173,39 +174,25 @@ exports.SignInTherapist = async (req, res) => {
 };
 
 //Sign In===============================
-exports.SignIn = async (req, res) => {
+exports.VerifyEmail = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const user = await Therapist.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // Check if user is already OTP verified
-        if (user.isOtpVerified) {
-            // Generate token directly
-            const token = jwt.sign(
-                { userId: user._id },
-                process.env.SECRET_KEY,
-                { expiresIn: '1h' }
-            );
-
-            const { password: _, ...userData } = user.toObject();
-            return res.status(200).json({
-                message: "User already verified",
-                user: userData,
-                token,
-                requiresOtp: false
-            });
-        }
-
-        // If not verified, proceed with OTP flow
+        // Check if the user already exists in the DummyUser collection
+        const existingUser = await DummyUser.findOne({ email });
         const otp = generateOTP();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
-        await user.save();
+
+        if (existingUser) {
+            existingUser.otp = otp;
+            existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+            await existingUser.save();
+        }
+        else {
+            const newUser = new DummyUser({ email });
+            newUser.otp = otp;
+            newUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+            await newUser.save();
+        }
 
         await sendOTP(email, otp);
 
@@ -226,23 +213,48 @@ exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
-        const user = await Therapist.findOne({
-            email,
-            otp,
-            otpExpires: { $gt: Date.now() }
-        });
+        const user = await DummyUser.findOne({ email, otp, isOtpVerified: false });
 
         if (!user) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: "Invalid or expired OTP",
-                requiresResend: true 
+                requiresResend: true
             });
         }
 
-        user.isOtpVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
+        if (user.otp !== otp) {
+            return res.status(400).json({
+                message: "Invalid OTP",
+                requiresResend: true
+            });
+        }
+
+        if (user.otpExpires < Date.now()) {
+            return res.status(400).json({
+                message: "OTP has expired",
+                requiresResend: true
+            });
+        }
+
+        // OTP is valid, proceed with verification
+        // Check if the user exists in the Therapist collection
+        const therapistUser = await Therapist.findOne({
+            email: user.email
+        });
+        if (!therapistUser) {
+            return res.status(202).json({
+                message: "User not found",
+            });
+        }
+
+
+        // user.isOtpVerified = true;
+        // user.otp = undefined;
+        // user.otpExpires = undefined;
+        // await user.save();
+        await user.deleteOne({
+            email: user.email
+        })
 
         const token = jwt.sign(
             { userId: user._id },
@@ -250,7 +262,7 @@ exports.verifyOTP = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        const { password: _, ...userData } = user.toObject();
+        const { password: _, ...userData } = therapistUser.toObject();
         res.status(200).json({
             message: "OTP verified successfully",
             user: userData,
@@ -271,14 +283,14 @@ exports.resendOTP = async (req, res) => {
         const user = await Therapist.findOne({ email });
 
         if (!user) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: "User not found",
                 success: false
             });
         }
 
         const otp = generateOTP();
-        
+
         user.otp = otp;
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
         user.isOtpVerified = false;
@@ -286,7 +298,7 @@ exports.resendOTP = async (req, res) => {
 
         await sendOTP(email, otp);
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: "New OTP sent to your email",
             success: true,
             email: email
@@ -294,7 +306,7 @@ exports.resendOTP = async (req, res) => {
 
     } catch (error) {
         console.error("Error in resendOTP:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "Internal Server Error",
             success: false
         });

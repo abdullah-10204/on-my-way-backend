@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/signupTherapist', upload.single('profilePhoto'), authController.SignUpTherapist);
 router.post("/SignInTherapist", authController.SignInTherapist);
-router.post("/signIn", authController.SignIn);
+router.post("/verify-email", authController.VerifyEmail);
 
 // router.post('/verify', authController.verifyCode);
 // router.post('/resend-code', authController.resendVerificationCode);
