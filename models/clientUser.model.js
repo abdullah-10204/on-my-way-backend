@@ -21,11 +21,6 @@ const clientUserSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    password: {
-        type: String,
-        required: true,
-        minlength: 6
-    },
     DateOfBirth: {
         type: Date,
         required: true
@@ -76,6 +71,10 @@ const clientUserSchema = new mongoose.Schema({
         type: Boolean,
         required: false
     },
+    role: {
+        type: String,
+        required: true
+    }
 }, { timestamps: true });
 
 const Client = mongoose.model('Client', clientUserSchema);

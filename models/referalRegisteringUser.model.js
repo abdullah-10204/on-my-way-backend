@@ -21,11 +21,6 @@ const referalRegisteringSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    password: {
-        type: String,
-        required: true,
-        minlength: 6
-    },
     DateOfBirth: {
         type: Date,
         required: true
@@ -56,38 +51,14 @@ const referalRegisteringSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    therapyServices: {
-        type: [String],
+    client: {
+        type: [],
         required: false
     },
-    basicDiagnosis: {
+    role: {
         type: String,
         required: true
-    },
-    preferTherapy: {
-        type: String,
-        required: false
-    },
-    assessmentAndRiskAssessment: {
-        type: Boolean,
-        required: false
-    },
-    fundingTherapySection: {
-        type: String,
-        trim: false
-    },
-    planEndDate: {
-        type: String,
-        trim: true
-    },
-    fundingManagementType: {
-        type: String,
-        trim: false
-    },
-    termAndCondition: {
-        type: Boolean,
-        required: false
-    },
+    }
 }, { timestamps: true });
 
 const ReferalRegister = mongoose.model('ReferalRegister', referalRegisteringSchema);

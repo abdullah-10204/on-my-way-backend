@@ -37,11 +37,6 @@ const therapistUserSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
-    password: {
-        type: String,
-        required: true,
-        minlength: 6
-    },
     prefferedClientAgegroup: {
         type: [String],
     },
@@ -94,18 +89,9 @@ const therapistUserSchema = new mongoose.Schema({
         min: 0,
         max: 1000
     },
-    otp: {
+    role: {
         type: String,
-        trim: true,
-    },
-    otpExpires: {
-        type: Date,
-        default: Date.now,
-        expires: '5m'
-    },
-    isOtpVerified: {
-        type: Boolean,
-        default: false
+        required: true,
     }
 }, { timestamps: true });
 

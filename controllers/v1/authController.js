@@ -1,12 +1,13 @@
-const Therapist = require("../../models/therapistUser.models.js");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
-const { generateOTP, sendOTP } = require('../../services/otpService.js');
+const Therapist = require("../../models/therapistUser.models.js");
+const Client = require("../../models/clientUser.model");
+const ReferalRegister = require("../../models/referalRegisteringUser.model");
 const DummyUser = require("../../models/dummyUser.models.js");
+const { generateOTP, sendOTP } = require('../../services/otpService.js');
 
 //SignUpTherapist===============================
-exports.SignUpTherapist = async (req, res) => {
+exports.signUpTherapist = async (req, res) => {
     try {
         const {
             fullName,
@@ -31,31 +32,17 @@ exports.SignUpTherapist = async (req, res) => {
             chargesPerHour
         } = req.body;
 
-        // Check if the user already exists
         const existingUser = await Therapist.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const addressArray = address ? address.split(',') : [];
+        const addressArray = address ? [address] : [];
 
-        const prefferedClientAgegroupArray = prefferedClientAgegroup
-            ? req.body.prefferedClientAgegroup.split(',')
-            : [];
-
-        const diagnosisOptionsArray = diagnosisOptions
-            ? req.body.diagnosisOptions.split(',')
-            : [];
-
-        // const verificationCode = generateVerificationCode();
-        // const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-        // Create a new user
         const newUser = new Therapist({
-            profilePhoto: req.file ? req.file.path : "", // Use the uploaded file path
+            profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
             fullName,
             email,
             phone,
@@ -64,10 +51,10 @@ exports.SignUpTherapist = async (req, res) => {
             gender,
             address: addressArray,
             city,
-            prefferedClientAgegroup: prefferedClientAgegroupArray,
-            diagnosisOptions: diagnosisOptionsArray,
+            prefferedClientAgegroup: prefferedClientAgegroup || [],
+            diagnosisOptions: diagnosisOptions || [],
             travelTime,
-            therapyType,
+            therapyType: therapyType || [],
             bankingDetails,
             AHPRANumber,
             field,
@@ -76,19 +63,13 @@ exports.SignUpTherapist = async (req, res) => {
             ABNNumber,
             digitalSignature,
             chargesPerHour,
-            // isVerified: false,
-            // verificationCode,
-            // verificationCodeExpires,
+            role: "therapist"
         });
 
         await newUser.save();
 
-        // if (email) {
-        //     await sendEmailVerification(email, verificationCode);
-        // }
-
         const token = jwt.sign(
-            { userId: newUser._id, email: newUser.email },
+            { userId: newUser._id, email: newUser.email, role: 'therapist' },
             process.env.SECRET_KEY,
             { expiresIn: '1h' }
         );
@@ -98,7 +79,8 @@ exports.SignUpTherapist = async (req, res) => {
         res.status(200).json({
             message: "Account created successfully",
             user: userData,
-            token
+            token,
+            role: userData.role
         });
 
     } catch (error) {
@@ -110,78 +92,181 @@ exports.SignUpTherapist = async (req, res) => {
     }
 };
 
-//SignInTherapist===============================
-exports.SignInTherapist = async (req, res) => {
-    try {
-        const { email, password } = req.body;
 
-        // 1. Verify credentials
-        const user = await Therapist.findOne({ email });
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(400).json({ message: "Invalid credentials" });
+//SignUpClient===============================
+exports.signUpClient = async (req, res) => {
+    try {
+        const {
+            fullName,
+            email,
+            phone,
+            DateOfBirth,
+            gender,
+            city,
+            resedentialAddress,
+            therapyServices,
+            diagonosis,
+            preferTherapy,
+            assessmentAndRiskAssessment,
+            planEndDate,
+            fundingTherapySection,
+            fundingManagementType,
+            termAndCondition
+        } = req.body;
+
+        const existingClient = await Client.findOne({ email });
+        if (existingClient) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client with this email already exists'
+            });
         }
 
-        // 2. Generate and save OTP
-        const otp = generateOTP();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-        user.isOtpVerified = false;
-        await user.save();
 
-        // 3. Send OTP
-        await sendOTP(email, otp);
+        const newClient = new Client({
+            profilePhoto: req.file ? req.file.path : "",
+            fullName,
+            email,
+            phone,
+            DateOfBirth: new Date(DateOfBirth),
+            gender,
+            city,
+            resedentialAddress: resedentialAddress ? resedentialAddress.split(',').map(item => item.trim()) : [],
+            therapyServices: therapyServices ? therapyServices.split(',').map(item => item.trim()) : [],
+            preferTherapy: preferTherapy ? preferTherapy.split(',').map(item => item.trim()) : [],
+            diagonosis,
+            assessmentAndRiskAssessment,
+            planEndDate,
+            fundingTherapySection,
+            fundingManagementType,
+            termAndCondition,
+            role: "client"
+        });
 
-        res.status(200).json({
-            message: "OTP sent to your email",
-            userId: user._id,
-            requiresOtp: true
+
+        const savedClient = await newClient.save();
+
+        const token = jwt.sign(
+            { id: savedClient._id, email: savedClient.email, role: 'client' },
+            process.env.SECRET_KEY,
+            { expiresIn: '24h' }
+        );
+
+        const clientData = savedClient.toObject();
+
+        res.status(201).json({
+            success: true,
+            message: 'Client registered successfully',
+            data: clientData,
+            token,
+            role: clientData.role,
         });
 
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error('Error in signUpClient:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
-};
+}
 
-exports.SignInTherapist = async (req, res) => {
+//SignUpReferalRegister===============================
+exports.signUpReferalRegister = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const {
+            fullName,
+            email,
+            phone,
+            DateOfBirth,
+            gender,
+            city,
+            resedentialAddress,
+            businessName,
+            businessAddress,
+            businessWebsiteAddress
+        } = req.body;
 
-        // 1. Verify credentials
-        const user = await Therapist.findOne({ email });
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(400).json({ message: "Invalid credentials" });
+        const existingUser = await ReferalRegister.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User with this email already exists'
+            });
         }
 
-        // 2. Generate and save OTP
-        const otp = generateOTP();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-        user.isOtpVerified = false;
-        await user.save();
+        const newUser = new ReferalRegister({
+            profilePhoto: req.file ? req.file.path : "",
+            fullName,
+            email,
+            phone,
+            DateOfBirth: new Date(DateOfBirth),
+            gender,
+            city,
+            resedentialAddress: resedentialAddress ? resedentialAddress.split(',').map(item => item.trim()) : [],
+            businessName,
+            businessAddress,
+            businessWebsiteAddress,
+            role: "referral"
+        });
 
-        // 3. Send OTP
-        await sendOTP(email, otp);
 
-        res.status(200).json({
-            message: "OTP sent to your email",
-            userId: user._id,
-            requiresOtp: true
+        const savedUser = await newUser.save();
+
+        const token = jwt.sign(
+            { id: savedUser._id, email: savedUser.email, role: 'referral' },
+            process.env.SECRET_KEY,
+            { expiresIn: '24h' }
+        );
+
+        const userData = savedUser.toObject();
+
+        res.status(201).json({
+            success: true,
+            message: 'Referral registered successfully',
+            data: userData,
+            role: userData.role,
+            token
         });
 
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error('Error in signUpReferalRegister:', error);
+
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                message: 'Validation error',
+                errors: messages
+            });
+        }
+
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email already exists'
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 };
 
-//Sign In===============================
-exports.VerifyEmail = async (req, res) => {
+//Verify Email===============================
+exports.verifyEmail = async (req, res) => {
     try {
         const { email } = req.body;
 
         // Check if the user already exists in the DummyUser collection
         const existingUser = await DummyUser.findOne({ email });
         const otp = generateOTP();
-
+        console.log("otp",otp);
+        
         if (existingUser) {
             existingUser.otp = otp;
             existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
@@ -208,7 +293,7 @@ exports.VerifyEmail = async (req, res) => {
     }
 };
 
-// Verify OTP ===============================
+// Verify OTP===============================
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -236,22 +321,22 @@ exports.verifyOTP = async (req, res) => {
             });
         }
 
-        // OTP is valid, proceed with verification
-        // Check if the user exists in the Therapist collection
+
         const therapistUser = await Therapist.findOne({
             email: user.email
         });
-        if (!therapistUser) {
-            return res.status(202).json({
-                message: "User not found",
-            });
+        const clientUser = await Client.findOne({
+            email: user.email
+        });
+        const referalUser = await ReferalRegister.findOne({
+            email: user.email
+        });
+
+        let foundUser = therapistUser || clientUser || referalUser;
+        if (!foundUser) {
+            return res.status(202).json({ message: "User not found" });
         }
 
-
-        // user.isOtpVerified = true;
-        // user.otp = undefined;
-        // user.otpExpires = undefined;
-        // await user.save();
         await user.deleteOne({
             email: user.email
         })
@@ -262,11 +347,12 @@ exports.verifyOTP = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        const { password: _, ...userData } = therapistUser.toObject();
+        const { password: _, ...userData } = foundUser.toObject();
         res.status(200).json({
             message: "OTP verified successfully",
             user: userData,
-            token
+            token,
+            role: userData.role
         });
 
     } catch (error) {
