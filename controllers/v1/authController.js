@@ -1,7 +1,7 @@
 const Therapist = require("../../models/therapistUser.models.js");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-// const { sendEmailVerification, generateVerificationCode } = require("../../services/verificationService.js");
+
 const { generateOTP, sendOTP } = require('../../services/otpService.js');
 
 //SignUpTherapist===============================
@@ -171,78 +171,6 @@ exports.SignInTherapist = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
-
-
-
-//Verify Code===============================
-// exports.verifyCode = async (req, res) => {
-//     try {
-//         const { userId, code } = req.body;
-
-//         const user = await Therapist.findOne({
-//             _id: userId,
-//             verificationCode: code,
-//             verificationCodeExpires: { $gt: Date.now() }
-//         });
-
-//         if (!user) {
-//             return res.status(400).json({
-//                 message: "Invalid or expired verification code"
-//             });
-//         }
-
-//         user.isVerified = true;
-//         user.verificationCode = undefined;
-//         user.verificationCodeExpires = undefined;
-//         await user.save();
-
-//         // Generate and return token after successful verification
-//         const token = jwt.sign(
-//             { userId: user._id, email: user.email },
-//             process.env.SECRET_KEY,
-//             { expiresIn: '1h' }
-//         );
-
-//         const { password: _, ...userData } = user.toObject();
-
-//         res.status(200).json({
-//             message: "Account verified successfully",
-//             user: userData,
-//             token
-//         });
-
-//     } catch (error) {
-//         res.status(500).json({ message: "Internal Server Error" });
-//     }
-// };
-
-// exports.resendVerificationCode = async (req, res) => {
-//     try {
-//         const { userId } = req.body;
-
-//         const user = await Therapist.findById(userId);
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         const verificationCode = generateVerificationCode();
-//         user.verificationCode = verificationCode;
-//         user.verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
-//         await user.save();
-
-//         if (user.email) {
-//             await sendEmailVerification(user.email, verificationCode);
-//             res.json({ message: "New verification code sent to email" });
-//         } else if (user.phone) {
-//             await sendSMSVerification(user.phone, verificationCode);
-//             res.json({ message: "New verification code sent via SMS" });
-//         } else {
-//             res.status(400).json({ message: "No contact method available" });
-//         }
-//     } catch (error) {
-//         res.status(500).json({ message: "Internal Server Error" });
-//     }
-// };
 
 //Sign In===============================
 exports.SignIn = async (req, res) => {
