@@ -141,6 +141,39 @@ exports.SignInTherapist = async (req, res) => {
     }
 };
 
+exports.SignInTherapist = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Verify credentials
+        const user = await Therapist.findOne({ email });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // 2. Generate and save OTP
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+        user.isOtpVerified = false;
+        await user.save();
+
+        // 3. Send OTP
+        await sendOTP(email, otp);
+
+        res.status(200).json({
+            message: "OTP sent to your email",
+            userId: user._id,
+            requiresOtp: true
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+
 //Verify Code===============================
 // exports.verifyCode = async (req, res) => {
 //     try {
@@ -211,37 +244,84 @@ exports.SignInTherapist = async (req, res) => {
 //     }
 // };
 
+//Sign In===============================
+exports.SignIn = async (req, res) => {
+    try {
+        const { email } = req.body;
 
-//Verify OTP===============================
+        const user = await Therapist.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if user is already OTP verified
+        if (user.isOtpVerified) {
+            // Generate token directly
+            const token = jwt.sign(
+                { userId: user._id },
+                process.env.SECRET_KEY,
+                { expiresIn: '1h' }
+            );
+
+            const { password: _, ...userData } = user.toObject();
+            return res.status(200).json({
+                message: "User already verified",
+                user: userData,
+                token,
+                requiresOtp: false
+            });
+        }
+
+        // If not verified, proceed with OTP flow
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+        await user.save();
+
+        await sendOTP(email, otp);
+
+        res.status(200).json({
+            message: "OTP sent to your email",
+            requiresOtp: true,
+            email: email
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// Verify OTP ===============================
 exports.verifyOTP = async (req, res) => {
     try {
-        const { userId, otp } = req.body;
+        const { email, otp } = req.body;
 
-        // 1. Find user
         const user = await Therapist.findOne({
-            _id: userId,
+            email,
             otp,
             otpExpires: { $gt: Date.now() }
         });
 
         if (!user) {
-            return res.status(400).json({ message: "Invalid or expired OTP" });
+            return res.status(400).json({ 
+                message: "Invalid or expired OTP",
+                requiresResend: true 
+            });
         }
 
-        // 2. Mark as verified
         user.isOtpVerified = true;
         user.otp = undefined;
         user.otpExpires = undefined;
         await user.save();
 
-        // 3. Generate JWT token
         const token = jwt.sign(
             { userId: user._id },
             process.env.SECRET_KEY,
             { expiresIn: '1h' }
         );
 
-        // 4. Return success with token
         const { password: _, ...userData } = user.toObject();
         res.status(200).json({
             message: "OTP verified successfully",
@@ -250,6 +330,7 @@ exports.verifyOTP = async (req, res) => {
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
@@ -257,22 +338,37 @@ exports.verifyOTP = async (req, res) => {
 //Resend OTP===============================
 exports.resendOTP = async (req, res) => {
     try {
-        const { userId } = req.body;
-        const user = await Therapist.findById(userId);
+        const { email } = req.body;
+
+        const user = await Therapist.findOne({ email });
 
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ 
+                message: "User not found",
+                success: false
+            });
         }
 
         const otp = generateOTP();
+        
         user.otp = otp;
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+        user.isOtpVerified = false;
         await user.save();
 
-        await sendOTP(user.email, otp);
+        await sendOTP(email, otp);
 
-        res.status(200).json({ message: "New OTP sent" });
+        res.status(200).json({ 
+            message: "New OTP sent to your email",
+            success: true,
+            email: email
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error in resendOTP:", error);
+        res.status(500).json({ 
+            message: "Internal Server Error",
+            success: false
+        });
     }
 };
