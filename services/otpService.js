@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 // Generate 6-digit OTP
-exports.generateOTP = () => crypto.randomInt(100000, 999999).toString();
+exports.generateOTP = () => crypto.randomInt(1000, 9999).toString();
 
 // Send OTP via Email
 exports.sendOTP = async (email, otp) => {
