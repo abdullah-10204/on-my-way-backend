@@ -92,7 +92,6 @@ exports.signUpTherapist = async (req, res) => {
     }
 };
 
-
 //SignUpClient===============================
 exports.signUpClient = async (req, res) => {
     try {
