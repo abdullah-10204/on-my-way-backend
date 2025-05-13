@@ -92,7 +92,7 @@ const therapistUserSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-    }
+    },
 }, { timestamps: true });
 
 const Therapist = mongoose.model('Therapist', therapistUserSchema);

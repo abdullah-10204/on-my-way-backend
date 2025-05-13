@@ -13,7 +13,6 @@ exports.signUpTherapist = async (req, res) => {
             fullName,
             email,
             phone,
-            password,
             DateOfBirth,
             gender,
             address,
@@ -37,8 +36,6 @@ exports.signUpTherapist = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
         const addressArray = address ? [address] : [];
 
         const newUser = new Therapist({
@@ -46,7 +43,6 @@ exports.signUpTherapist = async (req, res) => {
             fullName,
             email,
             phone,
-            password: hashedPassword,
             DateOfBirth,
             gender,
             address: addressArray,
@@ -74,7 +70,7 @@ exports.signUpTherapist = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        const { password: _, ...userData } = newUser.toObject();
+        const { ...userData } = newUser.toObject();
 
         res.status(200).json({
             message: "Account created successfully",
@@ -264,8 +260,8 @@ exports.verifyEmail = async (req, res) => {
         // Check if the user already exists in the DummyUser collection
         const existingUser = await DummyUser.findOne({ email });
         const otp = generateOTP();
-        console.log("otp",otp);
-        
+        console.log("otp", otp);
+
         if (existingUser) {
             existingUser.otp = otp;
             existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes

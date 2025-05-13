@@ -13,5 +13,4 @@ router.post("/verify-email", authController.verifyEmail);
 router.post("/verify-otp", authController.verifyOTP);
 router.post("/resend-otp", authController.resendOTP);
 
-
 module.exports = router;
