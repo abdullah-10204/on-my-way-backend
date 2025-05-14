@@ -29,8 +29,12 @@ const therapistUserSchema = new mongoose.Schema({
         type: String,
         enum: ["male", "female", "other"],
     },
-    address: {
-        type: [String],
+    addressOne: {
+        type: String,
+        required: true
+    },
+    addressTwo: {
+        type: String,
         required: true
     },
     city: {
