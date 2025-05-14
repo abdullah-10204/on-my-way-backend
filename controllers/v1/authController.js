@@ -15,7 +15,6 @@ exports.signUpTherapist = async (req, res) => {
             phone,
             DateOfBirth,
             gender,
-            address,
             city,
             prefferedClientAgegroup,
             diagnosisOptions,
@@ -28,15 +27,15 @@ exports.signUpTherapist = async (req, res) => {
             WWCCNumber,
             ABNNumber,
             digitalSignature,
-            chargesPerHour
+            chargesPerHour,
+            addressOne,
+            addressTwo
         } = req.body;
 
         const existingUser = await Therapist.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
-
-        const addressArray = address ? [address] : [];
 
         const newUser = new Therapist({
             profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
@@ -45,7 +44,9 @@ exports.signUpTherapist = async (req, res) => {
             phone,
             DateOfBirth,
             gender,
-            address: addressArray,
+            addressOne: addressOne,
+            addressTwo:addressTwo,
+            Address1:
             city,
             prefferedClientAgegroup: prefferedClientAgegroup || [],
             diagnosisOptions: diagnosisOptions || [],
