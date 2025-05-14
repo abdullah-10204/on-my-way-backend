@@ -29,7 +29,9 @@ exports.signUpTherapist = async (req, res) => {
             digitalSignature,
             chargesPerHour,
             addressOne,
-            addressTwo
+            addressTwo,
+            policeCheck,
+            ndis
         } = req.body;
 
         const existingUser = await Therapist.findOne({ email });
@@ -60,6 +62,8 @@ exports.signUpTherapist = async (req, res) => {
             ABNNumber,
             digitalSignature,
             chargesPerHour,
+            policeCheck:policeCheck,
+            NDIS:ndis,
             role: "therapist"
         });
 
