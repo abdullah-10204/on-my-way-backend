@@ -361,12 +361,11 @@ exports.resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const user = await Therapist.findOne({ email });
-
+        const user = await DummyUser.findOne({ email });
         if (!user) {
-            return res.status(404).json({
+            return res.status(400).json({
                 message: "User not found",
-                success: false
+                requiresResend: false
             });
         }
 
