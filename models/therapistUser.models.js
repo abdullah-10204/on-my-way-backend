@@ -88,6 +88,14 @@ const therapistUserSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    policeCheck: {
+        type: String,
+        required: true
+    },
+    NDIS: {
+        type: String,
+        required: true
+    },
     chargesPerHour: {
         type: Number,
         min: 0,
