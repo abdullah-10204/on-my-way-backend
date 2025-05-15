@@ -40,7 +40,8 @@ exports.signUpTherapist = async (req, res) => {
         }
 
         const newUser = new Therapist({
-            profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            // profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            profilePhoto: req.file ? req.file.filename : req.body.profilePhoto || "",
             fullName,
             email,
             phone,
