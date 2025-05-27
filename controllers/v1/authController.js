@@ -40,7 +40,8 @@ exports.signUpTherapist = async (req, res) => {
         }
 
         const newUser = new Therapist({
-            profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            // profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            profilePhoto: req.file ? req.file.filename : req.body.profilePhoto || "",
             fullName,
             email,
             phone,
@@ -342,7 +343,7 @@ exports.verifyOTP = async (req, res) => {
         })
 
         const token = jwt.sign(
-            { userId: user._id },
+            { userId: foundUser._id },
             process.env.SECRET_KEY,
             { expiresIn: '1h' }
         );

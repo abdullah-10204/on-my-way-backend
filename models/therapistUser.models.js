@@ -27,7 +27,7 @@ const therapistUserSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        enum: ["male", "female", "both"],
+        enum: ["Male", "Female", "Other"],
     },
     addressOne: {
         type: String,
