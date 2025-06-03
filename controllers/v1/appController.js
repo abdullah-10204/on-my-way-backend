@@ -4,9 +4,9 @@ const FavouriteTherapist = require("../../models/favourite.model.js") ;
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {
     try {
-        const { userID } = req.body;
+        const { userId } = req.body;
 
-        const user = await Therapist.findById(userID);
+        const user = await Therapist.findById(userId);
         if (!user) {
             return res.status(400).json({ message: "User with user ID doesn't exist! " });
         }
@@ -31,18 +31,19 @@ exports.GetTherapistProfileData = async (req, res) => {
 //Edit Therapist Profile data============================
 exports.EditTherapistProfileData = async (req, res) => {
     try {
-        const { userID, profilePhoto, fullName, email, phone, DateOfBirth, address } = req.body;
+        const { userID, fullName, email, phone, DateOfBirth, address, gender } = req.body;
         const user = await Therapist.findById(userID);
         if (!user) {
             return res.status(400).json({ message: "User with user ID doesn't exist! " });
         }
         // Update user data
-        user.profilePhoto = profilePhoto || user.profilePhoto;
+        user.profilePhoto = req.file ? req.file.filename : req.body.profilePhoto ||  user.profilePhoto;
         user.fullName = fullName || user.fullName;
         user.email = email || user.email;
         user.phone = phone || user.phone;
         user.DateOfBirth = DateOfBirth || user.DateOfBirth;
         user.address = address || user.address;
+        user.gender = gender || user.gender;
         await user.save();
         res.status(200).json({ message: "Profile updated successfully", user });
     }

@@ -40,7 +40,8 @@ exports.signUpTherapist = async (req, res) => {
         }
 
         const newUser = new Therapist({
-            profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            // profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
+            profilePhoto: req.file ? req.file.filename : req.body.profilePhoto || "",
             fullName,
             email,
             phone,
@@ -342,7 +343,7 @@ exports.verifyOTP = async (req, res) => {
         })
 
         const token = jwt.sign(
-            { userId: user._id },
+            { userId: foundUser._id },
             process.env.SECRET_KEY,
             { expiresIn: '1h' }
         );
@@ -366,12 +367,11 @@ exports.resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const user = await Therapist.findOne({ email });
-
+        const user = await DummyUser.findOne({ email });
         if (!user) {
-            return res.status(404).json({
+            return res.status(400).json({
                 message: "User not found",
-                success: false
+                requiresResend: false
             });
         }
 
