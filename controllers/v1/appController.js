@@ -1,4 +1,5 @@
 const Therapist = require("../../models/therapistUser.models.js") ;
+const FavouriteTherapist = require("../../models/favourite.model.js") ;
 
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {
@@ -96,4 +97,68 @@ exports.EditTherapistServicesData = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
+//All Therapist data============================
+exports.GetAllTherapists = async (req, res) => {
+    try {
+        const therapists = await Therapist.find({})
+            .select('-__v -createdAt -updatedAt')
+            .lean(); 
+
+        res.status(200).json({
+            success: true,
+            count: therapists.length,
+            therapists
+        });
+
+    } catch (error) {
+        console.error('Error fetching therapists:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching therapists',
+            error: error.message 
+        });
+    }
+};
+
+exports.toggleFavouriteTherapist = async (req, res) => {
+    try {
+        const { therapistId } = req.body;
+
+        const therapistExists = await Therapist.findById(therapistId);
+        if (!therapistExists) {
+            return res.status(404).json({ message: "Therapist not found." });
+        }
+
+        let record = await FavouriteTherapist.findOne({ therapistId });
+
+        if (!record) {
+            // If no record exists, create one and mark as favourite
+            record = new FavouriteTherapist({ therapistId, isFavourite: true });
+            await record.save();
+            return res.status(201).json({ message: "Therapist marked as favourite.", isFavourite: true });
+        }
+
+        // Toggle isFavourite
+        record.isFavourite = !record.isFavourite;
+        await record.save();
+
+        res.status(200).json({
+            message: record.isFavourite ? "Therapist marked as favourite." : "Therapist un-favourited.",
+            isFavourite: record.isFavourite
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getAllFavouriteTherapists = async (req, res) => {
+    try {
+        const favourites = await FavouriteTherapist.find({ isFavourite: true }).populate("therapistId");
+        res.status(200).json({message:"Get All Favourite Therapists Successfully",favourites});
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 

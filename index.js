@@ -27,9 +27,10 @@ const PORT = process.env.PORT || 3000;
         // Routes
         const authRoutes = require('./routes/v1/authRoute');
         const appRoutes = require('./routes/v1/appRoute');
-
+        const clientRoutes = require('./routes/v1/clientRoute');
         app.use('/api/auth', authRoutes);
         app.use('/api', appRoutes);
+        app.use('/api', clientRoutes);
 
         // Global error handler
         app.use((err, req, res, next) => {

@@ -93,7 +93,7 @@ const therapistUserSchema = new mongoose.Schema({
         required: true
     },
     NDIS: {
-        type: String,
+        type: Number,
         required: true
     },
     chargesPerHour: {
