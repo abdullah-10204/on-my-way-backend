@@ -4,8 +4,7 @@ const favouriteTherapistSchema = new mongoose.Schema({
     therapistId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Therapist',
-        required: true,
-        unique: true
+        required: true
     },
     clientId:{
         type: mongoose.Schema.Types.ObjectId,
