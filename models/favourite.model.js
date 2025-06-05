@@ -7,6 +7,7 @@ const favouriteTherapistSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    
     isFavourite: {
         type: Boolean,
         default: false
