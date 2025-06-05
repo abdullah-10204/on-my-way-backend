@@ -1,6 +1,6 @@
 const Therapist = require("../../models/therapistUser.models.js") ;
 const FavouriteTherapist = require("../../models/favourite.model.js") ;
-
+const geodist = require('geodist');
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {
     try {
@@ -32,7 +32,7 @@ exports.GetTherapistProfileData = async (req, res) => {
 exports.EditTherapistProfileData = async (req, res) => {
     try {
         const { userID, fullName, email, phone, DateOfBirth, address, gender } = req.body;
-        const user = await Therapist.findById(userID);
+        const user = await Therapist.findById({_id:userID});
         if (!user) {
             return res.status(400).json({ message: "User with user ID doesn't exist! " });
         }
@@ -100,8 +100,9 @@ exports.EditTherapistServicesData = async (req, res) => {
 }
 
 //All Therapist data============================
-exports.GetAllTherapists = async (req, res) => {
+exports.GetAllTherapistsData = async (req, res) => {
     try {
+
         const therapists = await Therapist.find({})
             .select('-__v -createdAt -updatedAt')
             .lean(); 
@@ -118,6 +119,65 @@ exports.GetAllTherapists = async (req, res) => {
             success: false,
             message: 'Server error while fetching therapists',
             error: error.message 
+        });
+    }
+};
+
+exports.GetAllTherapists = async (req, res) => {
+    try {
+        const { clientLocation, page = 1 } = req.body;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        if (!clientLocation) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client location is required'
+            });
+        }
+
+        const therapists = await Therapist.find({})
+            .select('fullName field chargesPerHour addressOne')
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const staticDistances = [2, 5, 1, 3, 4, 6, 7, 8, 9, 10];
+
+        const results = therapists.map((therapist, index) => {
+            const distance = staticDistances[index % staticDistances.length];
+            const travelCost = distance * 1; 
+
+            return {
+                therapistName: therapist.fullName,
+                therapistCategory: 'Physiotherapy',
+                distance: `${distance}km`,
+                travelCost: `${travelCost}$`,
+                chargesPerHour: `${therapist.chargesPerHour}$ per hour`,
+            };
+        });
+
+        results.sort((a, b) => {
+            return parseInt(a.distance) - parseInt(b.distance);
+        });
+
+        const totalTherapists = await Therapist.countDocuments();
+
+        res.status(200).json({
+            success: true,
+            therapists: results,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalTherapists / limit),
+                totalTherapists
+            },
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
         });
     }
 };

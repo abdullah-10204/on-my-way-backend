@@ -5,6 +5,7 @@ const Client = require("../../models/clientUser.model");
 const ReferalRegister = require("../../models/referalRegisteringUser.model");
 const DummyUser = require("../../models/dummyUser.models.js");
 const { generateOTP, sendOTP } = require('../../services/otpService.js');
+const { connectDB } = require('../../config/connectDB.js');
 
 //SignUpTherapist===============================
 exports.signUpTherapist = async (req, res) => {
@@ -39,6 +40,14 @@ exports.signUpTherapist = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
+        const toBoolean = (value) => {
+            if (typeof value === 'boolean') return value;
+            if (typeof value === 'string') {
+                return value.toLowerCase() === 'true' || value === '1';
+            }
+            return false; 
+        };
+
         const newUser = new Therapist({
             // profilePhoto: req.file ? req.file.path : req.body.profilePhoto || "",
             profilePhoto: req.file ? req.file.filename : req.body.profilePhoto || "",
@@ -64,25 +73,27 @@ exports.signUpTherapist = async (req, res) => {
             digitalSignature,
             chargesPerHour,
             policeCheck:policeCheck,
-            NDIS:ndis,
+            NDIS:toBoolean(ndis),
             role: "therapist"
         });
 
-        await newUser.save();
+        
+
+        const savedClient = await newUser.save();
 
         const token = jwt.sign(
-            { userId: newUser._id, email: newUser.email, role: 'therapist' },
+            { id: savedClient._id, email: savedClient.email, role: 'therapist' },
             process.env.SECRET_KEY,
-            { expiresIn: '1h' }
+            { expiresIn: '24h' }
         );
 
-        const { ...userData } = newUser.toObject();
+        const clientData = savedClient.toObject();
 
         res.status(200).json({
             message: "Account created successfully",
-            user: userData,
+            user: clientData,
             token,
-            role: userData.role
+            role: clientData.role
         });
 
     } catch (error) {
@@ -96,7 +107,7 @@ exports.signUpTherapist = async (req, res) => {
 
 //SignUpClient===============================
 exports.signUpClient = async (req, res) => {
-    try {
+    try {                
         const {
             fullName,
             email,
@@ -115,14 +126,22 @@ exports.signUpClient = async (req, res) => {
             termAndCondition
         } = req.body;
 
+        const toBoolean = (value) => {
+            if (typeof value === 'boolean') return value;
+            if (typeof value === 'string') {
+                return value.toLowerCase() === 'true' || value === '1';
+            }
+            return false; 
+        };
+
         const existingClient = await Client.findOne({ email });
+
         if (existingClient) {
             return res.status(400).json({
                 success: false,
                 message: 'Client with this email already exists'
             });
         }
-
 
         const newClient = new Client({
             profilePhoto: req.file ? req.file.path : "",
@@ -133,17 +152,16 @@ exports.signUpClient = async (req, res) => {
             gender,
             city,
             resedentialAddress: resedentialAddress ? resedentialAddress.split(',').map(item => item.trim()) : [],
-            therapyServices: therapyServices ? therapyServices.split(',').map(item => item.trim()) : [],
-            preferTherapy: preferTherapy ? preferTherapy.split(',').map(item => item.trim()) : [],
+            therapyServices,
             diagonosis,
-            assessmentAndRiskAssessment,
+            preferTherapy,
+            assessmentAndRiskAssessment: toBoolean(assessmentAndRiskAssessment),
             planEndDate,
             fundingTherapySection,
             fundingManagementType,
-            termAndCondition,
+            termAndCondition: toBoolean(termAndCondition),
             role: "client"
         });
-
 
         const savedClient = await newClient.save();
 
@@ -155,23 +173,23 @@ exports.signUpClient = async (req, res) => {
 
         const clientData = savedClient.toObject();
 
-        res.status(201).json({
+
+        return res.status(201).json({
             success: true,
-            message: 'Client registered successfully',
+            message: 'Client created successfully',
             data: clientData,
-            token,
-            role: clientData.role,
+            token:token
         });
 
     } catch (error) {
-        console.error('Error in signUpClient:', error);
-        res.status(500).json({
+        console.error("Error in signUpClient:", error);
+        return res.status(500).json({
             success: false,
             message: 'Internal server error',
             error: error.message
         });
     }
-}
+};
 
 //SignUpReferalRegister===============================
 exports.signUpReferalRegister = async (req, res) => {
