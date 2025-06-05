@@ -143,33 +143,35 @@ exports.GetAllTherapists = async (req, res) => {
             .limit(limit)
             .lean();
 
-        let favouriteTherapistMap = {};
-        if (clientId) {
-            const favouriteTherapists = await FavouriteTherapist.find({ 
-                clientId: clientId,
-                isFavourite: true 
-            });
+        // const fav = await favourite.find({clientid })
+
+        // let favouriteTherapistMap = {};
+        // if (clientId) {
+        //     const favouriteTherapists = await FavouriteTherapist.find({ 
+        //         clientId: clientId,
+        //         isFavourite: true 
+        //     });
             
-            favouriteTherapists.forEach(ft => {
-                favouriteTherapistMap[ft.therapistId.toString()] = true;
-            });
-        }
+        //     favouriteTherapists.forEach(ft => {
+        //         favouriteTherapistMap[ft.therapistId.toString()] = true;
+        //     });
+        // }
 
-        const staticDistances = [2, 5, 1, 3, 4, 6, 7, 8, 9, 10];
+        // const staticDistances = [2, 5, 1, 3, 4, 6, 7, 8, 9, 10];
 
-        const results = therapists.map((therapist, index) => {
-            const distance = staticDistances[index % staticDistances.length];
-            const travelCost = distance * 1; 
+        // const results = therapists.map((therapist, index) => {
+        //     const distance = staticDistances[index % staticDistances.length];
+        //     const travelCost = distance * 1; 
 
-            return {
-                therapistName: therapist.fullName,
-                therapistCategory: 'Physiotherapy',
-                distance: `${distance}km`,
-                travelCost: `${travelCost}$`,
-                chargesPerHour: `${therapist.chargesPerHour}$ per hour`,
-                isFavourite: clientId ? !!favouriteTherapistMap[therapist._id.toString()] : false
-            };
-        });
+        //     return {
+        //         therapistName: therapist.fullName,
+        //         therapistCategory: 'Physiotherapy',
+        //         distance: `${distance}km`,
+        //         travelCost: `${travelCost}$`,
+        //         chargesPerHour: `${therapist.chargesPerHour}$ per hour`,
+        //         isFavourite: clientId ? !!favouriteTherapistMap[therapist._id.toString()] : false
+        //     };
+        // });
 
         results.sort((a, b) => {
             return parseInt(a.distance) - parseInt(b.distance);
