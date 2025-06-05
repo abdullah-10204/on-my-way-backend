@@ -11,10 +11,6 @@ const favouriteTherapistSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
         required: true,
-    },
-    isFavourite: {
-        type: Boolean,
-        default: false
     }
 }, { timestamps: true });
 

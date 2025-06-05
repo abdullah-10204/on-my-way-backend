@@ -9,10 +9,6 @@ const editClientProfile = async (req, res) => {
             address,
             dateOfBirth,
             gender,
-            therapyServices,
-            diagonosis,
-            preferTherapy,
-            profilePhoto,
             id
         } = req.body;
 
@@ -23,11 +19,7 @@ const editClientProfile = async (req, res) => {
             resedentialAddress: [address],
             DateOfBirth: new Date(dateOfBirth),
             gender: gender.toLowerCase(),
-            therapyServices: therapyServices ? therapyServices.filter(service => service.selected)
-                .map(service => service.name) : undefined,
-            diagonosis,
-            preferTherapy: preferTherapy ? [preferTherapy] : undefined,
-            profilePhoto: req.file ? req.file.path : "",
+            profilePhoto: "",
         };
 
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
