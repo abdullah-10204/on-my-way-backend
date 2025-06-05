@@ -1,6 +1,6 @@
-const Therapist = require("../../models/therapistUser.models.js") ;
-const Client = require("../../models/clientUser.model.js") ;
-const FavouriteTherapist = require("../../models/favourite.model.js") ;
+const Therapist = require("../../models/therapistUser.models.js");
+const Client = require("../../models/clientUser.model.js");
+const FavouriteTherapist = require("../../models/favourite.model.js");
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {
     try {
@@ -33,12 +33,12 @@ exports.GetTherapistProfileData = async (req, res) => {
 exports.EditTherapistProfileData = async (req, res) => {
     try {
         const { userID, fullName, email, phone, DateOfBirth, address, gender } = req.body;
-        const user = await Therapist.findById({_id:userID});
+        const user = await Therapist.findById({ _id: userID });
         if (!user) {
             return res.status(400).json({ message: "User with user ID doesn't exist! " });
         }
         // Update user data
-        user.profilePhoto = req.file ? req.file.filename : req.body.profilePhoto ||  user.profilePhoto;
+        user.profilePhoto = req.file ? req.file.filename : req.body.profilePhoto || user.profilePhoto;
         user.fullName = fullName || user.fullName;
         user.email = email || user.email;
         user.phone = phone || user.phone;
@@ -106,7 +106,7 @@ exports.GetAllTherapistsData = async (req, res) => {
 
         const therapists = await Therapist.find({})
             .select('-__v -createdAt -updatedAt')
-            .lean(); 
+            .lean();
 
         res.status(200).json({
             success: true,
@@ -116,10 +116,10 @@ exports.GetAllTherapistsData = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching therapists:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: 'Server error while fetching therapists',
-            error: error.message 
+            error: error.message
         });
     }
 };
@@ -138,55 +138,48 @@ exports.GetAllTherapists = async (req, res) => {
         }
 
         const therapists = await Therapist.find({})
-            .select('fullName field chargesPerHour addressOne')
             .skip(skip)
             .limit(limit)
             .lean();
 
-        // const fav = await favourite.find({clientid })
-
-        // let favouriteTherapistMap = {};
-        // if (clientId) {
-        //     const favouriteTherapists = await FavouriteTherapist.find({ 
-        //         clientId: clientId,
-        //         isFavourite: true 
-        //     });
-            
-        //     favouriteTherapists.forEach(ft => {
-        //         favouriteTherapistMap[ft.therapistId.toString()] = true;
-        //     });
-        // }
-
-        // const staticDistances = [2, 5, 1, 3, 4, 6, 7, 8, 9, 10];
-
-        // const results = therapists.map((therapist, index) => {
-        //     const distance = staticDistances[index % staticDistances.length];
-        //     const travelCost = distance * 1; 
-
-        //     return {
-        //         therapistName: therapist.fullName,
-        //         therapistCategory: 'Physiotherapy',
-        //         distance: `${distance}km`,
-        //         travelCost: `${travelCost}$`,
-        //         chargesPerHour: `${therapist.chargesPerHour}$ per hour`,
-        //         isFavourite: clientId ? !!favouriteTherapistMap[therapist._id.toString()] : false
-        //     };
-        // });
-
-        results.sort((a, b) => {
-            return parseInt(a.distance) - parseInt(b.distance);
-        });
+        let favtherapist = [];
+        if (clientId) {
+            favtherapist = await FavouriteTherapist.find({ clientId })
+                .populate('therapistId')
+                .lean();
+        }
 
         const totalTherapists = await Therapist.countDocuments();
 
+        const distance = 2;
+        const travelCost = 6;
+
+        // Manually clone and inject static values into each object
+        const therapistWithExtras = JSON.parse(JSON.stringify(therapists), (key, value) => {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                value.distance = distance;
+                value.travelCost = travelCost;
+            }
+            return value;
+        });
+
+        const favtherapistWithExtras = JSON.parse(JSON.stringify(favtherapist), (key, value) => {
+            if (key === 'therapistId' && typeof value === 'object' && value !== null) {
+                value.distance = distance;
+                value.travelCost = travelCost;
+            }
+            return value;
+        });
+
         res.status(200).json({
             success: true,
-            therapists: results,
+            therapist: therapistWithExtras,
+            favtherapist: favtherapistWithExtras,
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalTherapists / limit),
                 totalTherapists
-            },
+            }
         });
 
     } catch (error) {
@@ -217,33 +210,21 @@ exports.addFavouriteTherapist = async (req, res) => {
             });
         }
 
-        const existingFavourite = await FavouriteTherapist.findOne({ 
-            therapistId, 
-            clientId 
+        const existingFavourite = await FavouriteTherapist.findOne({
+            therapistId,
+            clientId
         });
 
         if (existingFavourite) {
-            if (existingFavourite.isFavourite) {
-                return res.status(400).json({
-                    status: 'failed',
-                    message: 'Therapist is already in favorites',
-                });
-            } else {
-                existingFavourite.isFavourite = true;
-                await existingFavourite.save();
-                return res.status(200).json({
-                    status: 'success',
-                    message: 'Therapist added to favorites',
-                    data: existingFavourite,
-                });
-            }
+            return res.status(400).json({
+                status: 'failed',
+                message: 'Therapist is already in favorites',
+            });
         }
 
-        // Create new favourite
         const favourite = await FavouriteTherapist.create({
             therapistId,
-            clientId,
-            isFavourite: true
+            clientId
         });
 
         return res.status(200).json({
@@ -265,17 +246,13 @@ exports.addFavouriteTherapist = async (req, res) => {
 exports.removeFavouriteTherapist = async (req, res) => {
     const { therapistId, clientId } = req.body;
     try {
-        const favourite = await FavouriteTherapist.findOneAndUpdate(
-            { therapistId, clientId },
-            { isFavourite: false },
-            { new: true }
-        );
+        const deletedFavourite = await FavouriteTherapist.findOneAndDelete({ therapistId, clientId });
 
-        if (favourite) {
+        if (deletedFavourite) {
             return res.status(200).json({
                 status: 'success',
                 message: 'Therapist removed from favorites',
-                data: favourite,
+                data: deletedFavourite,
             });
         } else {
             return res.status(404).json({
@@ -296,7 +273,7 @@ exports.removeFavouriteTherapist = async (req, res) => {
 exports.GetAllFavouriteTherapist = async (req, res) => {
     try {
         const { clientId } = req.body;
-        
+
         if (!clientId) {
             return res.status(400).json({
                 success: false,
@@ -304,29 +281,25 @@ exports.GetAllFavouriteTherapist = async (req, res) => {
             });
         }
 
-        // Get all therapists
         const therapists = await Therapist.find({});
-        
-        // Get all favourite therapists for this client
-        const favouriteTherapists = await FavouriteTherapist.find({ 
+
+        const favouriteTherapists = await FavouriteTherapist.find({
             clientId: clientId,
-            isFavourite: true 
+            isFavourite: true
         });
-        
-        // Create a map of therapist IDs that are favourites for this client
+
         const favouriteTherapistMap = {};
         favouriteTherapists.forEach(ft => {
             favouriteTherapistMap[ft.therapistId.toString()] = true;
         });
-        
-        // Add isFavourite flag to each therapist
+
         const therapistsWithFavouriteFlag = therapists.map(therapist => {
             return {
                 ...therapist.toObject(),
                 isFavourite: !!favouriteTherapistMap[therapist._id.toString()]
             };
         });
-        
+
         res.status(200).json({
             success: true,
             data: therapistsWithFavouriteFlag
@@ -340,4 +313,3 @@ exports.GetAllFavouriteTherapist = async (req, res) => {
         });
     }
 };
-

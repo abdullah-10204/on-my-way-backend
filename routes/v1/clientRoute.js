@@ -5,7 +5,7 @@ const upload = require("../../middlewares/upload");
 
 const router = express.Router();
 
-router.post("/editClientProfile", jwtMiddleware, upload.single('profilePhoto'), clientController.editClientProfile);
+router.post("/editClientProfile", jwtMiddleware,clientController.editClientProfile);
 router.post("/editClientServices", jwtMiddleware, clientController.editClientServices);
 router.post("/getClientProfile", jwtMiddleware, clientController.getClientProfile);
 
