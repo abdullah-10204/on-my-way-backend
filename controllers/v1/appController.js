@@ -137,44 +137,53 @@ exports.GetAllTherapists = async (req, res) => {
             });
         }
 
-        const therapists = await Therapist.find({})
-            .skip(skip)
-            .limit(limit)
-            .lean();
+        const matchStage = {};
 
-        let favtherapist = [];
-        if (clientId) {
-            favtherapist = await FavouriteTherapist.find({ clientId })
-                .populate('therapistId')
-                .lean();
-        }
-
-        const totalTherapists = await Therapist.countDocuments();
-
-        const distance = 2;
-        const travelCost = 6;
-
-        // Manually clone and inject static values into each object
-        const therapistWithExtras = JSON.parse(JSON.stringify(therapists), (key, value) => {
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                value.distance = distance;
-                value.travelCost = travelCost;
+        const pipeline = [
+            { $match: matchStage },
+            { $sort: { createdAt: -1 } }, // optional
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'favouritetherapists',
+                    let: { therapistId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$therapistId', '$$therapistId'] },
+                                        { $eq: ['$clientId', clientId ? { $toObjectId: clientId } : null] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'favData'
+                }
+            },
+            {
+                $addFields: {
+                    isFavourite: { $gt: [{ $size: '$favData' }, 0] },
+                    distance: 2,
+                    travelCost: 6
+                }
+            },
+            {
+                $project: {
+                    favData: 0
+                }
             }
-            return value;
-        });
+        ];
 
-        const favtherapistWithExtras = JSON.parse(JSON.stringify(favtherapist), (key, value) => {
-            if (key === 'therapistId' && typeof value === 'object' && value !== null) {
-                value.distance = distance;
-                value.travelCost = travelCost;
-            }
-            return value;
-        });
+        const therapists = await Therapist.aggregate(pipeline);
 
-        res.status(200).json({
+        const totalTherapists = await Therapist.countDocuments(matchStage);
+
+        return res.status(200).json({
             success: true,
-            therapist: therapistWithExtras,
-            favtherapist: favtherapistWithExtras,
+            therapist: therapists,
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalTherapists / limit),
@@ -183,7 +192,7 @@ exports.GetAllTherapists = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Server error',
             error: error.message
