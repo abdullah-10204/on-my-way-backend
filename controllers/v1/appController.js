@@ -1,7 +1,6 @@
 const Therapist = require("../../models/therapistUser.models.js") ;
+const Client = require("../../models/clientUser.model.js") ;
 const FavouriteTherapist = require("../../models/favourite.model.js") ;
-const geodist = require('geodist');
-
 //Get Therapist Profile data============================
 exports.GetTherapistProfileData = async (req, res) => {
     try {
@@ -184,44 +183,146 @@ exports.GetAllTherapists = async (req, res) => {
     }
 };
 
-exports.toggleFavouriteTherapist = async (req, res) => {
+exports.addFavouriteTherapist = async (req, res) => {
+    const { therapistId, clientId } = req.body;
     try {
-        const { therapistId } = req.body;
-
-        const therapistExists = await Therapist.findById(therapistId);
-        if (!therapistExists) {
-            return res.status(404).json({ message: "Therapist not found." });
+        const therapist = await Therapist.findById(therapistId);
+        if (!therapist) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Therapist not found',
+            });
         }
 
-        let record = await FavouriteTherapist.findOne({ therapistId });
-
-        if (!record) {
-            // If no record exists, create one and mark as favourite
-            record = new FavouriteTherapist({ therapistId, isFavourite: true });
-            await record.save();
-            return res.status(201).json({ message: "Therapist marked as favourite.", isFavourite: true });
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Client not found',
+            });
         }
 
-        // Toggle isFavourite
-        record.isFavourite = !record.isFavourite;
-        await record.save();
-
-        res.status(200).json({
-            message: record.isFavourite ? "Therapist marked as favourite." : "Therapist un-favourited.",
-            isFavourite: record.isFavourite
+        const existingFavourite = await FavouriteTherapist.findOne({ 
+            therapistId, 
+            clientId 
         });
+
+        if (existingFavourite) {
+            if (existingFavourite.isFavourite) {
+                return res.status(400).json({
+                    status: 'failed',
+                    message: 'Therapist is already in favorites',
+                });
+            } else {
+                existingFavourite.isFavourite = true;
+                await existingFavourite.save();
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'Therapist added to favorites',
+                    data: existingFavourite,
+                });
+            }
+        }
+
+        // Create new favourite
+        const favourite = await FavouriteTherapist.create({
+            therapistId,
+            clientId,
+            isFavourite: true
+        });
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Therapist added to favorites',
+            data: favourite,
+        });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error adding favorite therapist:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Something went wrong while adding favorite therapist',
+            error: error.message,
+        });
     }
 };
 
-exports.getAllFavouriteTherapists = async (req, res) => {
+exports.removeFavouriteTherapist = async (req, res) => {
+    const { therapistId, clientId } = req.body;
     try {
-        const favourites = await FavouriteTherapist.find({ isFavourite: true }).populate("therapistId");
-        res.status(200).json({message:"Get All Favourite Therapists Successfully",favourites});
+        const favourite = await FavouriteTherapist.findOneAndUpdate(
+            { therapistId, clientId },
+            { isFavourite: false },
+            { new: true }
+        );
+
+        if (favourite) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'Therapist removed from favorites',
+                data: favourite,
+            });
+        } else {
+            return res.status(404).json({
+                status: 'failed',
+                message: 'Favorite therapist not found',
+            });
+        }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Error removing favorite therapist:", error);
+        return res.status(500).json({
+            status: 'failed',
+            message: 'Something went wrong while removing favorite therapist',
+            error: error.message,
+        });
     }
 };
 
+exports.GetAllFavouriteTherapist = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+        
+        if (!clientId) {
+            return res.status(400).json({
+                success: false,
+                message: "Client ID is required"
+            });
+        }
+
+        // Get all therapists
+        const therapists = await Therapist.find({});
+        
+        // Get all favourite therapists for this client
+        const favouriteTherapists = await FavouriteTherapist.find({ 
+            clientId: clientId,
+            isFavourite: true 
+        });
+        
+        // Create a map of therapist IDs that are favourites for this client
+        const favouriteTherapistMap = {};
+        favouriteTherapists.forEach(ft => {
+            favouriteTherapistMap[ft.therapistId.toString()] = true;
+        });
+        
+        // Add isFavourite flag to each therapist
+        const therapistsWithFavouriteFlag = therapists.map(therapist => {
+            return {
+                ...therapist.toObject(),
+                isFavourite: !!favouriteTherapistMap[therapist._id.toString()]
+            };
+        });
+        
+        res.status(200).json({
+            success: true,
+            data: therapistsWithFavouriteFlag
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
 
