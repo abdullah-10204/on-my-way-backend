@@ -125,7 +125,7 @@ exports.GetAllTherapistsData = async (req, res) => {
 
 exports.GetAllTherapists = async (req, res) => {
     try {
-        const { clientLocation, page = 1 } = req.body;
+        const { clientLocation, clientId, page = 1 } = req.body;
         const limit = 10;
         const skip = (page - 1) * limit;
 
@@ -142,6 +142,18 @@ exports.GetAllTherapists = async (req, res) => {
             .limit(limit)
             .lean();
 
+        let favouriteTherapistMap = {};
+        if (clientId) {
+            const favouriteTherapists = await FavouriteTherapist.find({ 
+                clientId: clientId,
+                isFavourite: true 
+            });
+            
+            favouriteTherapists.forEach(ft => {
+                favouriteTherapistMap[ft.therapistId.toString()] = true;
+            });
+        }
+
         const staticDistances = [2, 5, 1, 3, 4, 6, 7, 8, 9, 10];
 
         const results = therapists.map((therapist, index) => {
@@ -154,6 +166,7 @@ exports.GetAllTherapists = async (req, res) => {
                 distance: `${distance}km`,
                 travelCost: `${travelCost}$`,
                 chargesPerHour: `${therapist.chargesPerHour}$ per hour`,
+                isFavourite: clientId ? !!favouriteTherapistMap[therapist._id.toString()] : false
             };
         });
 
