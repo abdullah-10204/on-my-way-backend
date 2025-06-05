@@ -7,10 +7,14 @@ const authenticateJWT = async (req, res, next) => {
 
   if (authHeader) {
     const token = authHeader.split(' ')[1];
+    console.log("token",token);
 
     try {
       const decoded = jwt.verify(token, secret_Key);
-      const user = await Therapist.findById(decoded.userId);
+      console.log("decoded",decoded);
+
+      const user = await Therapist.findById(decoded.id);
+      console.log("user",user)
 
       if (!user) {
         return res.status(401).json({ status: 'failed', message: 'User not found' });
