@@ -11,5 +11,7 @@ router.get("/GetAllTherapistsData", jwtMiddleware, appController.GetAllTherapist
 router.post("/GetAllTherapists", jwtMiddleware, appController.GetAllTherapists);
 router.post("/AddFavouriteTherapist", jwtMiddleware, appController.addFavouriteTherapist);
 router.post("/RemoveFavouriteTherapist", jwtMiddleware, appController.removeFavouriteTherapist);
+router.post("/EditTherapistProfileData", jwtMiddleware, appController.EditTherapistProfileData);
+
 
 module.exports = router;
