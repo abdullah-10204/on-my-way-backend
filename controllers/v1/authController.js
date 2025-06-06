@@ -106,179 +106,94 @@ exports.signUpTherapist = async (req, res) => {
 };
 
 //SignUpClient===============================
-// exports.signUpClient = async (req, res) => {
-//     try {                
-//         const {
-//             fullName,
-//             email,
-//             phone,
-//             DateOfBirth,
-//             gender,
-//             city,
-//             addressOne,
-//             addressTwo,
-//             therapyServices,
-//             diagonosis,
-//             preferTherapy,
-//             // assessmentAndRiskAssessment,
-//             planEndDate,
-//             fundingTherapySection,
-//             fundingManagementType,
-//             // termAndCondition
-//         } = req.body;
-
-        
-
-//         // const toBoolean = (value) => {
-//         //     if (typeof value === 'boolean') return value;
-//         //     if (typeof value === 'string') {
-//         //         return value.toLowerCase() === 'true' || value === '1';
-//         //     }
-//         //     return false; 
-//         // };
-        
-
-//         const existingClient = await Client.findOne({ email });
-
-//         if (existingClient) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Client with this email already exists'
-//             });
-//         }
-
-//         const newClient = new Client({
-//             profilePhoto: req.file ? req.file.path : "",
-//             fullName,
-//             email,
-//             phone,
-//             DateOfBirth: new Date(DateOfBirth),
-//             gender,
-//             city,
-//             addressOne,
-//             addressTwo,
-//             therapyServices,
-//             diagonosis,
-//             preferTherapy,
-//             // assessmentAndRiskAssessment: toBoolean(assessmentAndRiskAssessment),
-//             planEndDate,
-//             fundingTherapySection,
-//             fundingManagementType,
-//             // termAndCondition: toBoolean(termAndCondition),
-//             role: "client"
-//         });
-
-//         const savedClient = await newClient.save();
-
-//         const token = jwt.sign(
-//             { id: savedClient._id, email: savedClient.email, role: 'client' },
-//             process.env.SECRET_KEY,
-//             { expiresIn: '24h' }
-//         );
-
-//         const clientData = savedClient.toObject();
-
-
-//         return res.status(201).json({
-//             success: true,
-//             message: 'Client created successfully',
-//             data: clientData,
-//             token:token
-//         });
-
-//     } catch (error) {
-//         console.error("Error in signUpClient:", error);
-//         return res.status(500).json({
-//             success: false,
-//             message: 'Internal server error',
-//             error: error.message
-//         });
-//     }
-// };
 exports.signUpClient = async (req, res) => {
-  try {
-    const {
-      fullName,
-      email,
-      phone,
-      DateOfBirth,
-      gender,
-      city,
-      addressOne,
-      addressTwo,
-      therapyServices: therapyServicesRaw,
-      diagonosis,
-      preferTherapy: preferTherapyRaw,
-      planEndDate,
-      fundingTherapySection,
-      fundingManagementType
-    } = req.body;
+    try {                
+        const {
+            fullName,
+            email,
+            phone,
+            DateOfBirth,
+            gender,
+            city,
+            addressOne,
+            addressTwo,
+            therapyServices,
+            diagonosis,
+            preferTherapy,
+            // assessmentAndRiskAssessment,
+            planEndDate,
+            fundingTherapySection,
+            fundingManagementType,
+            // termAndCondition
+        } = req.body;
 
-    // 🧠 Parse JSON strings into arrays
-    const parseJsonArray = (value) => {
-      try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        return [];
-      }
-    };
+        
 
-    const therapyServices = parseJsonArray(therapyServicesRaw);
-    const preferTherapy = parseJsonArray(preferTherapyRaw);
-    
-    const existingClient = await Client.findOne({ email });
-    if (existingClient) {
-      return res.status(400).json({
-        success: false,
-        message: 'Client with this email already exists'
-      });
+        // const toBoolean = (value) => {
+        //     if (typeof value === 'boolean') return value;
+        //     if (typeof value === 'string') {
+        //         return value.toLowerCase() === 'true' || value === '1';
+        //     }
+        //     return false; 
+        // };
+        
+
+        const existingClient = await Client.findOne({ email });
+
+        if (existingClient) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client with this email already exists'
+            });
+        }
+
+        const newClient = new Client({
+            profilePhoto: req.file ? req.file.path : "",
+            fullName,
+            email,
+            phone,
+            DateOfBirth: new Date(DateOfBirth),
+            gender,
+            city,
+            addressOne,
+            addressTwo,
+            therapyServices,
+            diagonosis,
+            preferTherapy,
+            // assessmentAndRiskAssessment: toBoolean(assessmentAndRiskAssessment),
+            planEndDate,
+            fundingTherapySection,
+            fundingManagementType,
+            // termAndCondition: toBoolean(termAndCondition),
+            role: "client"
+        });
+
+        const savedClient = await newClient.save();
+
+        const token = jwt.sign(
+            { id: savedClient._id, email: savedClient.email, role: 'client' },
+            process.env.SECRET_KEY,
+            { expiresIn: '24h' }
+        );
+
+        const clientData = savedClient.toObject();
+
+
+        return res.status(201).json({
+            success: true,
+            message: 'Client created successfully',
+            data: clientData,
+            token:token
+        });
+
+    } catch (error) {
+        console.error("Error in signUpClient:", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
-
-    const newClient = new Client({
-      profilePhoto: req.file ? req.file.path : '',
-      fullName,
-      email,
-      phone,
-      DateOfBirth: new Date(DateOfBirth),
-      gender,
-      city,
-      addressOne,
-      addressTwo,
-      therapyServices,
-      diagonosis,
-      preferTherapy,
-      planEndDate,
-      fundingTherapySection,
-      fundingManagementType,
-      role: 'client'
-    });
-
-    const savedClient = await newClient.save();
-
-    const token = jwt.sign(
-      { id: savedClient._id, email: savedClient.email, role: 'client' },
-      process.env.SECRET_KEY,
-      { expiresIn: '24h' }
-    );
-
-    const clientData = savedClient.toObject();
-
-    return res.status(201).json({
-      success: true,
-      message: 'Client created successfully',
-      data: clientData,
-      token
-    });
-
-  } catch (error) {
-    console.error('Error in signUpClient:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
 };
 
 //SignUpReferalRegister===============================
