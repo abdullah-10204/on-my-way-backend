@@ -115,15 +115,16 @@ exports.signUpClient = async (req, res) => {
             DateOfBirth,
             gender,
             city,
-            resedentialAddress,
+            addressOne,
+            addressTwo,
             therapyServices,
             diagonosis,
             preferTherapy,
-            assessmentAndRiskAssessment,
+            // assessmentAndRiskAssessment,
             planEndDate,
             fundingTherapySection,
             fundingManagementType,
-            termAndCondition
+            // termAndCondition
         } = req.body;
 
         const toBoolean = (value) => {
@@ -151,15 +152,16 @@ exports.signUpClient = async (req, res) => {
             DateOfBirth: new Date(DateOfBirth),
             gender,
             city,
-            resedentialAddress: resedentialAddress ? resedentialAddress.split(',').map(item => item.trim()) : [],
+            addressOne,
+            addressTwo,
             therapyServices,
             diagonosis,
             preferTherapy,
-            assessmentAndRiskAssessment: toBoolean(assessmentAndRiskAssessment),
+            // assessmentAndRiskAssessment: toBoolean(assessmentAndRiskAssessment),
             planEndDate,
             fundingTherapySection,
             fundingManagementType,
-            termAndCondition: toBoolean(termAndCondition),
+            // termAndCondition: toBoolean(termAndCondition),
             role: "client"
         });
 

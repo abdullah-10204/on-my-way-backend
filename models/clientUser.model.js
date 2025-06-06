@@ -35,10 +35,12 @@ const clientUserSchema = new mongoose.Schema({
         trim: true,
         required: false,
     },
-    resedentialAddress: {
-        type: [String],
-        required: true
-    },
+    // resedentialAddress: {
+    //     type: [String],
+    //     required: true
+    // },
+    addressOne: { type: String, required: true, trim: true },
+    addressTwo: { type: String, required: false, trim: true },
     therapyServices: {
         type: [String],
         required: false
@@ -51,10 +53,10 @@ const clientUserSchema = new mongoose.Schema({
         type: [String],
         required: false
     },
-    assessmentAndRiskAssessment: {
-        type: Boolean,
-        required: false
-    },
+    // assessmentAndRiskAssessment: {
+    //     type: Boolean,
+    //     required: false
+    // },
     fundingTherapySection: {
         type: String,
         trim: false
@@ -67,10 +69,10 @@ const clientUserSchema = new mongoose.Schema({
         type: String,
         trim: false
     },
-    termAndCondition: {
-        type: Boolean,
-        required: false
-    },
+    // termAndCondition: {
+    //     type: Boolean,
+    //     required: false
+    // },
     role: {
         type: String,
         required: true
